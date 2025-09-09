@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #scoreContainer {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px 0 20px;
+      font-weight: bold;
+    }
+        
+    .score {
+      padding: 5px 15px;
+      border-radius: 15px;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    #gameContainer {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    #gameTitle {
+      color: #333;
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #statusText {
+      color: #666;
+      font-size: 1.2em;
+      margin: 15px 0;
+      font-weight: 500;
+    }
+
+    #cellsContainer {
+      width: 300px;
+      height: 300px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+      gap: 5px;
+    }
+
+    .cell {
+      width: 90px;
+      height: 90px;
+      background: white;
+      font-size: 4.2em;
+      font-weight: bold;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .cell:hover {
+      background: #f8f9fa;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .cell-x {
+      color: #ff6b6b;
+    }
+
+    .cell-o {
+      color: #4ecdc4;
+    }
+
+    @keyframes glow {
+      0% {
+        box-shadow: 0 0 5px orange;
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 20px orange;
+        transform: scale(1.05);
+      }
+      100% {
+        box-shadow: 0 0 5px orange;
+        transform: scale(1);
+      }
+    }
+        
+    .winningCells {
+      animation: glow 2s infinite;
+      background-color: #ffd700 !important;
+      color: #6a0dad !important;
+    }
+
+    .winningMessage {
+      color: blue;
+      font-weight: bold;
+    }
+
+    .btn {
+      margin-top: 25px;
+      padding: 12px 30px;
+      font-size: 1.1em;
+      font-weight: 600;
+      background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+      background: linear-gradient(45deg, #ff5252, #ff7b7b);
+    }
+  </style>
+  <title>Tic-Tac-Toe</title>
+</head>
+<body>
+  <div id="gameContainer">
+    <h1 id = "gameTitle">Play Tic-Tac-Toe</h1>
+    <div id = "scoreContainer">
+      <div>X: <span class = "score" id = "scoreX">0</span></div>
+      <div>O: <span class = "score" id = "scoreO">0</span></div>
+    </div>
+    <div id="cellsContainer">
+      <div cellIndex = "0" class = "cell"></div>
+      <div cellIndex = "1" class = "cell"></div>
+      <div cellIndex = "2" class = "cell"></div>
+      <div cellIndex = "3" class = "cell"></div>
+      <div cellIndex = "4" class = "cell"></div>
+      <div cellIndex = "5" class = "cell"></div>
+      <div cellIndex = "6" class = "cell"></div>
+      <div cellIndex = "7" class = "cell"></div>
+      <div cellIndex = "8" class = "cell"></div>
+    </div>
+    <h2 id="gameStatus"></h2>
+    <button id="restartBtn" class = "btn">Restart Game</button>
+    <button id="resetBtn" class = "btn">Reset Game</button>
+  </div>
+  <script>
+    const cells = document.querySelectorAll(".cell");
+    const statusText = document.querySelector("#gameStatus");
+    const restartBtn = document.querySelector("#restartBtn");
+    const resetBtn = document.querySelector("#resetBtn");
+    const scoreX = document.querySelector("#scoreX");
+    const scoreO = document.querySelector("#scoreO");
+    let winConditions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7], 
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ]
+    let xScore = 0;
+    let oScore = 0;
+    let currentPlayer = "X";
+    let options = ["", "", "", "", "", "", "", "", ""];
+    let running = false;
+
+    initialize();
+
+    function initialize() {
+      cells.forEach(cell => cell.addEventListener('click', cellClicked));
+      restartBtn.addEventListener('click', restartGame);
+      resetBtn.addEventListener('click', resetGame);
+      statusText.textContent = currentPlayer + "'s turn";
+      running = true;
+    }
+    function cellClicked() {
+      const cellIndex = this.getAttribute("cellIndex");
+      if ((!running) || (options[cellIndex] !== "")) {
+        return;
+      }
+      updateGame(this, cellIndex);
+      checkWinner();
+    }
+    function updateGame(cell, index) {
+      cell.textContent = currentPlayer;
+      options[index] = currentPlayer;
+      if (cell.textContent === "X") {
+        cell.classList.add("cell-x");
+      } else {
+        cell.classList.add("cell-o");
+      }
+    }
+    function changePlayer() {
+      currentPlayer = (currentPlayer === "X") ? "O" : "X";
+      statusText.textContent = currentPlayer + "'s turn";
+    }
+    function checkWinner() {
+      let roundWon = false;
+      for (let i = 0; i < winConditions.length; i++) {
+        const condition = winConditions[i];
+        const cellA = condition[0];
+        const cellB = condition[1];
+        const cellC = condition[2];
+        if ((options[cellA] === "") || (options[cellB] === "") || (options[cellC] === "")) {
+          continue;
+        } else if ((options[cellA] === options[cellB]) && (options[cellB] === options[cellC])) {
+          roundWon = true;
+          cells[cellA].classList.add("winningCells");
+          cells[cellB].classList.add("winningCells");
+          cells[cellC].classList.add("winningCells");
+          break;
+        }
+      }
+      if (roundWon) {
+        statusText.textContent = "⭐ ⭐ ⭐ " + currentPlayer + " won ⭐ ⭐ ⭐ ";
+        statusText.classList.add("winningMessage");
+        if (currentPlayer === "X") {
+          xScore++;
+          scoreX.textContent = xScore;
+        } else {
+          oScore++;
+          scoreO.textContent = oScore;
+        }
+        running = false;
+      } else if (!options.includes("")) {
+        statusText.textContent = "Draw";
+        running = false;
+      } else {
+        changePlayer();
+      }
+    }
+    function restartGame() {
+      options = ["", "", "", "", "", "", "", "", ""];
+      currentPlayer = "X";
+      statusText.textContent = "";
+      statusText.classList.remove("winningMessage");
+      cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("cell-x", "cell-o", "winningCells");
+      })
+      running = true;
+    }
+    function resetGame() {
+      restartGame();
+      xScore = 0;
+      oScore = 0;
+      scoreX.textContent = xScore;
+      scoreO.textContent = oScore;
+}
+  </script>
+</body>
+</html>
